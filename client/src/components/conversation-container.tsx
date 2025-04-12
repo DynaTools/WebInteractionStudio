@@ -2,9 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAudioRecorder } from '@/hooks/use-audio-recorder';
 import { processAudio } from '@/lib/audio-processor';
 import { useToast } from '@/hooks/use-toast';
-import { Mic, X, MoreHorizontal } from 'lucide-react';
+import { Mic, X, MoreHorizontal, Save, Download, Copy, Trash2 } from 'lucide-react';
 import { AudioVisualizer } from '@/components/ui/audio-visualizer';
 import { Message, TutorInfo } from '@/lib/types';
+import { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
 
 interface ConversationContainerProps {
   tutor: TutorInfo;

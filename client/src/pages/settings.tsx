@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 
 // Função para copiar a configuração do servidor para o state local
 function copyConfigToState() {
@@ -24,7 +24,7 @@ function copyConfigToState() {
 export default function Settings() {
   const [config, setConfig] = useState(copyConfigToState());
   const { toast } = useToast();
-  const [, navigate] = useNavigate();
+  const [, setLocation] = useLocation();
 
   // Funções para atualizar configurações
   const updateOpenAIConfig = (key: string, value: any) => {
@@ -85,7 +85,7 @@ export default function Settings() {
     });
 
     // Retornar à página inicial
-    setTimeout(() => navigate("/"), 1500);
+    setTimeout(() => setLocation("/"), 1500);
   };
 
   return (
@@ -95,7 +95,7 @@ export default function Settings() {
           <h1 className="text-3xl font-bold">Configurações</h1>
           <p className="text-muted-foreground">Personalize sua experiência de aprendizado</p>
         </div>
-        <Button onClick={() => navigate("/")}>Voltar</Button>
+        <Button onClick={() => setLocation("/")}>Voltar</Button>
       </div>
 
       <Tabs defaultValue="openai" className="w-full">
