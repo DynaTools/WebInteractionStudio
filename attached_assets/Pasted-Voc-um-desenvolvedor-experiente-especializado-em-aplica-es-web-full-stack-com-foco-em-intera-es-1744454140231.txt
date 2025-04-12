@@ -1,0 +1,92 @@
+Você é um desenvolvedor experiente especializado em aplicações web full-stack com foco em interações humanas e IA. Sua tarefa é criar um protótipo funcional de um aplicativo web com as seguintes características:
+
+🔹 Objetivo:
+Desenvolver uma aplicação web que permita a um usuário conversar com um agente virtual (IA), representado por um avatar estático, por meio de uma videochamada em tempo real. O agente deve atuar como tutor de italiano, sempre respondendo em italiano, mesmo quando o usuário fala português ou outro idioma. A interação deve ocorrer por fala e texto: o usuário fala (áudio), o sistema transcreve, a IA responde em texto e gera áudio em italiano.
+
+🔹 Tecnologias:
+Frontend: React, HTML, CSS (visual moderno com balões de fala e avatar).
+
+Backend: Node.js + Express.
+
+Integrações:
+
+Agora Web SDK para videochamada (RTC).
+
+OpenAI Whisper API para transcrição de fala (STT).
+
+OpenAI GPT (Chat API) para resposta em italiano.
+
+OpenAI TTS (Text-to-Speech API) para gerar fala em italiano.
+
+🔹 Funcionalidades:
+Videochamada entre o usuário e o agente IA (avatar estático).
+
+Botão de gravação de áudio: o usuário pressiona para falar.
+
+Transcrição do que o usuário falou (usando Whisper).
+
+A IA responde com um texto em italiano (via ChatGPT com prompt fixo).
+
+O texto da IA aparece em um balão de fala junto ao avatar.
+
+A resposta é também falada, usando a API de TTS da OpenAI.
+
+A aplicação não deve expor chaves ou tokens ao usuário.
+
+Tokens da Agora devem ser gerados dinamicamente pelo backend.
+
+Todas as chaves e segredos devem ser configuradas via .env.
+
+🔹 Requisitos Visuais:
+Interface moderna e amigável, inspirada neste exemplo visual:
+Avatar à esquerda, balão de fala com fonte clara e layout responsivo.
+
+Ícones intuitivos: microfone, encerrar chamada, etc.
+
+Estilo visual compatível com aplicações modernas (rounded, sombras, responsivo).
+
+🔹 Prompt fixo para a IA (ChatGPT):
+Você é um tutor virtual de língua italiana. Sua função é conversar com o usuário somente em italiano, ajudando-o a praticar e aprender. Mesmo que o usuário fale em português ou outro idioma, responda sempre em italiano simples e claro. Explique termos em italiano se necessário, e incentive o usuário a continuar praticando. Seja paciente, educativo e amigável.
+
+Esse prompt deve ser usado como "system" na chamada ao modelo gpt-3.5-turbo (ou gpt-4, se preferido).
+
+🔹 Regras de desenvolvimento:
+Prepare um projeto GitHub completo, com README.md que explique como rodar no GitHub Codespaces.
+
+Use variáveis de ambiente para as credenciais (.env.example incluído).
+
+Inclua package.json com scripts para rodar npm run dev que inicie o frontend e backend (usando concurrently).
+
+O backend deve ter rotas:
+
+/agora-token: para gerar tokens com base no App ID e Certificado.
+
+/chat: recebe o áudio do usuário, transcreve (Whisper), responde (GPT) e converte em áudio (TTS).
+
+Documente o deploy e instruções para executar uma demonstração funcional confiável.
+
+🔹 Extras (prioritários para o protótipo):
+Código limpo, modular, com tratamento de erro (mensagens amigáveis se algo falhar).
+
+Garantia de funcionamento: o protótipo deve funcionar perfeitamente sem erros.
+
+Se possível, logue no console do backend as etapas de processamento: STT, GPT, TTS.
+
+🔹 Requisitos de produção (não obrigatórios no protótipo):
+Segurança de API (rate limit simples, proteção contra abuso).
+
+Possibilidade de evoluir para múltiplos usuários simultâneos (escalabilidade).
+
+Gere agora todo o código do projeto, incluindo:
+
+Frontend completo (React).
+
+Backend completo (Node.js + Express).
+
+Integrações com Agora e OpenAI.
+
+Arquivo .env.example.
+
+README com instruções claras para rodar no Codespaces.
+
+Priorize o bom funcionamento do DEMO. O foco é impressionar um cliente com uma apresentação impecável.
