@@ -5,6 +5,8 @@ import {
   InsertMessage,
   User,
   InsertUser,
+  AccessToken,
+  InsertAccessToken,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -21,23 +23,34 @@ export interface IStorage {
   // Message methods
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesBySession(sessionId: number): Promise<Message[]>;
+  
+  // Token methods
+  createAccessToken(token: InsertAccessToken): Promise<AccessToken>;
+  getAccessToken(token: string): Promise<AccessToken | undefined>;
+  updateAccessTokenUsage(tokenId: number): Promise<void>;
+  listAccessTokens(): Promise<AccessToken[]>;
+  deactivateAccessToken(tokenId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private sessions: Map<number, Session>;
   private messages: Map<number, Message>;
+  private accessTokens: Map<number, AccessToken>;
   private userIdCounter: number;
   private sessionIdCounter: number;
   private messageIdCounter: number;
+  private accessTokenIdCounter: number;
 
   constructor() {
     this.users = new Map();
     this.sessions = new Map();
     this.messages = new Map();
+    this.accessTokens = new Map();
     this.userIdCounter = 1;
     this.sessionIdCounter = 1;
     this.messageIdCounter = 1;
+    this.accessTokenIdCounter = 1;
   }
 
   // User methods
@@ -53,7 +66,12 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      isAdmin: insertUser.isAdmin || false,
+      createdAt: new Date()
+    };
     this.users.set(id, user);
     return user;
   }
@@ -103,6 +121,45 @@ export class MemStorage implements IStorage {
     return Array.from(this.messages.values()).filter(
       (message) => message.sessionId === sessionId
     );
+  }
+  
+  // Token methods
+  async createAccessToken(insertToken: InsertAccessToken): Promise<AccessToken> {
+    const id = this.accessTokenIdCounter++;
+    const token: AccessToken = {
+      ...insertToken,
+      id,
+      usageCount: 0,
+      createdAt: new Date(),
+    };
+    this.accessTokens.set(id, token);
+    return token;
+  }
+  
+  async getAccessToken(tokenString: string): Promise<AccessToken | undefined> {
+    return Array.from(this.accessTokens.values()).find(
+      (token) => token.token === tokenString
+    );
+  }
+  
+  async updateAccessTokenUsage(tokenId: number): Promise<void> {
+    const token = this.accessTokens.get(tokenId);
+    if (token) {
+      token.usageCount += 1;
+      this.accessTokens.set(tokenId, token);
+    }
+  }
+  
+  async listAccessTokens(): Promise<AccessToken[]> {
+    return Array.from(this.accessTokens.values());
+  }
+  
+  async deactivateAccessToken(tokenId: number): Promise<void> {
+    const token = this.accessTokens.get(tokenId);
+    if (token) {
+      token.isActive = false;
+      this.accessTokens.set(tokenId, token);
+    }
   }
 }
 
