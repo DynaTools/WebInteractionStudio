@@ -5,23 +5,7 @@ import multer from "multer";
 import { z } from "zod";
 import { AgoraTokenGenerator } from "./agora";
 import { transcribeAudio, generateAIResponse, generateSpeech } from "./openai";
-import { requireToken, requireAdmin, setupAuthRoutes, generateRandomToken } from "./auth";
-import { ChatRequest, TTSRequest, InsertAccessToken } from "@shared/schema";
-
-// Declaração para estender a interface Request do Express
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        isAuthenticated: boolean;
-        isAdmin: boolean;
-        userId?: number;
-        tokenId?: number;
-        createdBy?: number;
-      };
-    }
-  }
-}
+import { ChatRequest, TTSRequest } from "@shared/schema";
 
 // Define interface for Request with file from multer
 interface MulterRequest extends Request {
@@ -35,10 +19,8 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Configurar rotas de autenticação
-  setupAuthRoutes(app);
   // Agora token generation endpoint
-  app.get("/api/agora-token", requireToken, async (req: Request, res: Response) => {
+  app.get("/api/agora-token", async (req: Request, res: Response) => {
     try {
       if (!process.env.AGORA_APP_ID || !process.env.AGORA_APP_CERT) {
         throw new Error("Agora credentials not configured");
@@ -80,7 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transcribe speech to text endpoint
-  app.post("/api/stt", requireToken, upload.single("audio"), async (req: MulterRequest, res: Response) => {
+  app.post("/api/stt", upload.single("audio"), async (req: MulterRequest, res: Response) => {
     try {
       // Check if audio file was uploaded
       if (!req.file || !req.file.buffer) {
@@ -102,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat with AI endpoint
-  app.post("/api/chat", requireToken, async (req: Request, res: Response) => {
+  app.post("/api/chat", async (req: Request, res: Response) => {
     try {
       // Validate request
       const schema = z.object({
@@ -134,7 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Text to speech endpoint
-  app.post("/api/tts", requireToken, async (req: Request, res: Response) => {
+  app.post("/api/tts", async (req: Request, res: Response) => {
     try {
       // Validate request
       const schema = z.object({
@@ -171,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Combined endpoint for processing audio and getting response (for efficiency)
-  app.post("/api/process-audio", requireToken, upload.single("audio"), async (req: MulterRequest, res: Response) => {
+  app.post("/api/process-audio", upload.single("audio"), async (req: MulterRequest, res: Response) => {
     try {
       // Check if audio file was uploaded
       if (!req.file || !req.file.buffer) {
@@ -203,71 +185,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to process audio", 
         details: error.message 
       });
-    }
-  });
-
-  // Rota para verificar configurações (apenas admin) - Note a ordem dos middlewares
-  app.get("/api/admin/config", requireToken, requireAdmin, (req: Request, res: Response) => {
-    res.json({
-      message: "Acesso de administrador confirmado",
-      user: req.user
-    });
-  });
-  
-  // Rota para debug - TEMPORÁRIA
-  app.get("/api/debug", async (req: Request, res: Response) => {
-    try {
-      const users = Array.from((storage as any).users.values());
-      const tokens = await storage.listAccessTokens();
-      
-      res.json({
-        users: users.map((u: any) => ({
-          id: u.id,
-          username: u.username,
-          isAdmin: u.isAdmin
-        })),
-        tokens: tokens.map(t => ({
-          id: t.id,
-          description: t.description,
-          createdBy: t.createdBy,
-          isActive: t.isActive
-        }))
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-  
-  // Rota para criar um token de admin - TEMPORÁRIA E EXCLUSIVA PARA DESENVOLVIMENTO
-  app.get("/api/debug/create-admin-token", async (req: Request, res: Response) => {
-    try {
-      const users = Array.from((storage as any).users.values());
-      const adminUser = users.find((u: any) => u.isAdmin);
-      
-      if (!adminUser) {
-        return res.status(404).json({ error: "Nenhum usuário admin encontrado" });
-      }
-      
-      // Criar um token para o admin
-      const newToken: InsertAccessToken = {
-        token: generateRandomToken(),
-        description: "Token admin para desenvolvimento",
-        isActive: true,
-        maxUsage: null,
-        expiresAt: null,
-        createdBy: adminUser.id,
-      };
-      
-      const token = await storage.createAccessToken(newToken);
-      
-      res.json({
-        message: "Token de admin criado com sucesso",
-        adminId: adminUser.id,
-        adminUsername: adminUser.username,
-        token: token.token
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
     }
   });
 

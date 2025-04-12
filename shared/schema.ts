@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -56,33 +56,9 @@ export type User = {
   id: number;
   username: string;
   password: string;
-  isAdmin: boolean;
-  createdAt: Date;
 };
 
 export type InsertUser = {
   username: string;
   password: string;
-  isAdmin?: boolean;
-};
-
-export type AccessToken = {
-  id: number;
-  token: string;
-  description: string;
-  isActive: boolean;
-  usageCount: number;
-  maxUsage: number | null; // null significa uso ilimitado
-  expiresAt: Date | null; // null significa que não expira
-  createdAt: Date;
-  createdBy: number; // ID do usuário que criou o token
-};
-
-export type InsertAccessToken = {
-  token: string;
-  description: string;
-  isActive: boolean;
-  maxUsage: number | null;
-  expiresAt: Date | null;
-  createdBy: number;
 };
