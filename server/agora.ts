@@ -21,16 +21,27 @@ export class AgoraTokenGenerator {
     uid: string,
     expirationTimeInSeconds: number = 3600
   ): string {
+    // Validate inputs
+    if (!this.appId || !this.appCertificate) {
+      throw new Error("AppID and AppCertificate are required");
+    }
+    
+    if (!channelName) {
+      throw new Error("Channel name is required");
+    }
+    
+    console.log(`Generating token for app ID: ${this.appId}, channel: ${channelName}, uid: ${uid}`);
+    
     // Current timestamp in seconds
     const currentTimestamp = Math.floor(Date.now() / 1000);
     
     // Calculate expiration timestamp
     const expirationTimestamp = currentTimestamp + expirationTimeInSeconds;
     
-    // Generate random salt
+    // Generate random salt (for signature uniqueness)
     const salt = Math.floor(Math.random() * 100000);
     
-    // Token info - using simple format for demo
+    // Token info
     const tokenInfo = {
       appId: this.appId,
       channelName,

@@ -3,7 +3,7 @@ import { VideoCallContainer } from '@/components/video-call-container';
 import { useAgoraClient } from '@/lib/agora-client';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { TutorInfo } from '@/lib/types';
+import { TutorInfo, AgoraTokenResponse } from '@/lib/types';
 import { tutors } from '@/assets/tutors';
 
 export default function Home() {
@@ -48,10 +48,22 @@ export default function Home() {
     if (agoraData && !isConnected) {
       const init = async () => {
         try {
+          console.log('Joining Agora channel with data:', {
+            appId: agoraData.appId,
+            channelName: agoraData.channelName,
+            uid: agoraData.uid
+          });
+          
           await joinChannel(agoraData.appId, agoraData.channelName, agoraData.token, agoraData.uid);
+          console.log('Successfully joined Agora channel');
           setIsConnected(true);
         } catch (err) {
           console.error('Failed to join channel:', err);
+          // Show error toast or notification here
+          // Try to reconnect after a delay
+          setTimeout(() => {
+            setIsConnected(false); // Reset connection state to trigger a retry
+          }, 5000);
         }
       };
       

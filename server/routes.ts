@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -6,6 +6,11 @@ import { z } from "zod";
 import { AgoraTokenGenerator } from "./agora";
 import { transcribeAudio, generateAIResponse, generateSpeech } from "./openai";
 import { ChatRequest, TTSRequest } from "@shared/schema";
+
+// Define interface for Request with file from multer
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 // Configure multer for audio uploads
 const upload = multer({
@@ -20,6 +25,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!process.env.AGORA_APP_ID || !process.env.AGORA_APP_CERT) {
         throw new Error("Agora credentials not configured");
       }
+      
+      console.log("Generating Agora token with APP ID:", process.env.AGORA_APP_ID);
 
       // Create a token generator
       const tokenGenerator = new AgoraTokenGenerator(
@@ -27,14 +34,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         process.env.AGORA_APP_CERT
       );
 
-      // Generate a channel name (using a random name for simplicity)
-      const channelName = `channel-${Math.floor(Math.random() * 10000)}`;
+      // Use fixed channel name for consistency
+      const channelName = "italian-tutor-main-channel";
       
-      // Generate a uid (using a random number for simplicity)
-      const uid = Math.floor(Math.random() * 100000);
+      // Generate a uid (using a fixed number for the server)
+      const uid = 9999;
       
       // Generate token with expiration time (1 hour)
       const token = tokenGenerator.generateToken(channelName, uid.toString(), 3600);
+      
+      console.log("Token generated successfully for channel:", channelName);
       
       // Return token information
       res.json({
@@ -45,12 +54,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Error generating Agora token:", error);
-      res.status(500).json({ error: "Failed to generate Agora token" });
+      res.status(500).json({ 
+        error: "Failed to generate Agora token", 
+        details: error.message 
+      });
     }
   });
 
   // Transcribe speech to text endpoint
-  app.post("/api/stt", upload.single("audio"), async (req: Request, res: Response) => {
+  app.post("/api/stt", upload.single("audio"), async (req: MulterRequest, res: Response) => {
     try {
       // Check if audio file was uploaded
       if (!req.file || !req.file.buffer) {
@@ -65,9 +77,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Transcription result:", transcription);
       
       res.json({ text: transcription });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error transcribing audio:", error);
-      res.status(500).json({ error: "Failed to transcribe audio" });
+      res.status(500).json({ error: "Failed to transcribe audio", details: error.message });
     }
   });
 
@@ -135,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Combined endpoint for processing audio and getting response (for efficiency)
-  app.post("/api/process-audio", upload.single("audio"), async (req: Request, res: Response) => {
+  app.post("/api/process-audio", upload.single("audio"), async (req: MulterRequest, res: Response) => {
     try {
       // Check if audio file was uploaded
       if (!req.file || !req.file.buffer) {
@@ -161,9 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         response: aiResponse,
         audioUrl: `data:audio/mpeg;base64,${audioBuffer.toString('base64')}`
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing audio:", error);
-      res.status(500).json({ error: "Failed to process audio" });
+      res.status(500).json({ 
+        error: "Failed to process audio", 
+        details: error.message 
+      });
     }
   });
 
