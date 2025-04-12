@@ -34,14 +34,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         process.env.AGORA_APP_CERT
       );
 
-      // Use fixed channel name for consistency
-      const channelName = "italian-tutor-main-channel";
+      // Use the channel name "DEMO" como solicitado pelo usuário
+      const channelName = "DEMO";
       
       // Generate a uid (using a fixed number for the server)
       const uid = 9999;
       
-      // Generate token with expiration time (1 hour)
-      const token = tokenGenerator.generateToken(channelName, uid.toString(), 3600);
+      // Use o token temporário fornecido pelo usuário em vez de gerar um novo
+      const token = "007eJxTYPD9qjdn3jmV1QyTPhqIXnITuqfw90PVLgWny9L3X60XjfyvwGBuZGZgZJBkmGhpYmBikZhkaWhgnJpqYGZhlGRmapxkucj1V3pDICPDdk83RkYGCATxWRhcXH39GRgAaHsfIQ==";
       
       console.log("Token generated successfully for channel:", channelName);
       
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         uid,
         appId: process.env.AGORA_APP_ID,
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating Agora token:", error);
       res.status(500).json({ 
         error: "Failed to generate Agora token", 
@@ -106,9 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("AI response:", aiResponse);
       
       res.json({ response: aiResponse });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating AI response:", error);
-      res.status(500).json({ error: "Failed to generate AI response" });
+      res.status(500).json({ 
+        error: "Failed to generate AI response",
+        details: error.message 
+      });
     }
   });
 
@@ -140,9 +143,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send audio data
       res.send(audioBuffer);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating speech:", error);
-      res.status(500).json({ error: "Failed to generate speech" });
+      res.status(500).json({ 
+        error: "Failed to generate speech",
+        details: error.message 
+      });
     }
   });
 
