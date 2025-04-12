@@ -46,17 +46,28 @@ export function useAgoraClient() {
     if (!clientRef.current) return;
     
     try {
+      console.log('Initializing Agora client with:', { appId, channel, token, uid });
+      
+      // Validate inputs
+      if (!appId || !channel || !token) {
+        throw new Error('Missing required Agora parameters');
+      }
+      
       // Join the channel
       await clientRef.current.join(appId, channel, token, uid);
+      console.log('Successfully joined Agora channel:', channel);
       
       // Create local audio track
+      console.log('Creating local audio track');
       const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
       
       // Publish local audio track
+      console.log('Publishing local audio track');
       await clientRef.current.publish([audioTrack]);
       
       setLocalAudioTrack(audioTrack);
       
+      console.log('Agora setup complete');
       return true;
     } catch (error) {
       console.error("Error joining channel:", error);

@@ -12,7 +12,7 @@ export default function Home() {
   const [sessionTime, setSessionTime] = useState(0);
   
   // Get Agora token from backend
-  const { data: agoraData, isLoading, error } = useQuery({
+  const { data: agoraData, isLoading, error } = useQuery<AgoraTokenResponse>({
     queryKey: ['/api/agora-token'],
     retry: 3,
   });
