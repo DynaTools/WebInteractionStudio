@@ -239,9 +239,74 @@ export function ConversationContainer({ tutor }: ConversationContainerProps) {
         
         {/* Additional Controls */}
         <div className="flex space-x-3">
-          <button className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-            <MoreHorizontal className="h-6 w-6 text-gray-700" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-3 rounded-full bg-gray-200 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <MoreHorizontal className="h-6 w-6 text-gray-700" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => {
+                toast({
+                  title: "Conversação salva",
+                  description: "A conversação foi salva com sucesso."
+                });
+              }}>
+                <Save className="mr-2 h-4 w-4" />
+                <span>Salvar Conversação</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                // Preparar o conteúdo da conversação para download
+                const content = messages.map(msg => 
+                  `[${formatTime(msg.timestamp)}] ${msg.isTutor ? 'Tutor' : 'Você'}: ${msg.content}`
+                ).join('\n\n');
+                
+                // Criar um blob e link para download
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `conversacao-italiana-${new Date().toISOString().split('T')[0]}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                toast({
+                  title: "Conversação exportada",
+                  description: "O arquivo de texto foi baixado com sucesso."
+                });
+              }}>
+                <Download className="mr-2 h-4 w-4" />
+                <span>Exportar como Texto</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                // Copiar a última mensagem do tutor para a área de transferência
+                const lastTutorMessage = [...messages].reverse().find(msg => msg.isTutor)?.content || '';
+                navigator.clipboard.writeText(lastTutorMessage).then(() => {
+                  toast({
+                    title: "Copiado!",
+                    description: "A última mensagem do tutor foi copiada para a área de transferência."
+                  });
+                });
+              }}>
+                <Copy className="mr-2 h-4 w-4" />
+                <span>Copiar Última Mensagem</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600" onClick={() => {
+                // Limpar todas as mensagens exceto a primeira (de boas-vindas)
+                setMessages(messages.slice(0, 1));
+                toast({
+                  title: "Conversação Apagada",
+                  description: "Todas as mensagens foram removidas."
+                });
+              }}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                <span>Limpar Conversação</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button 
             className="p-3 rounded-full bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
             onClick={handleEndCall}
