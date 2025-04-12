@@ -1,4 +1,8 @@
 import { createRoot } from "react-dom/client";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { TokenProvider } from "./hooks/use-token-auth";
+import { Toaster } from "@/components/ui/toaster";
 import App from "./App";
 import "./index.css";
 
@@ -47,4 +51,11 @@ fontLink.href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500
 fontLink.rel = "stylesheet";
 document.head.appendChild(fontLink);
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <QueryClientProvider client={queryClient}>
+    <TokenProvider>
+      <App />
+      <Toaster />
+    </TokenProvider>
+  </QueryClientProvider>
+);

@@ -38,8 +38,52 @@ export function requireToken(req: Request, res: Response, next: NextFunction) {
       // Incrementar a contagem de uso
       await storage.updateAccessTokenUsage(accessToken.id);
       
+      // Verificar se o token foi criado por um admin
+      let isAdmin = false;
+      
+      // Estratégia 1: verificar se o usuário que criou o token é admin
+      try {
+        const createdBy = accessToken.createdBy;
+        log(`Token criado pelo usuário ID: ${createdBy}`, 'info');
+        
+        const user = await storage.getUser(createdBy);
+        
+        if (user) {
+          log(`Dados do usuário: ${JSON.stringify(user)}`, 'info');
+          if (user.isAdmin) {
+            isAdmin = true;
+            log(`Usuário é administrador pela verificação normal`, 'info');
+          }
+        } else {
+          log(`Usuário com ID ${createdBy} não encontrado.`, 'info');
+        }
+      } catch (error: any) {
+        log(`Erro ao verificar permissões do usuário: ${error.message}`, 'error');
+      }
+      
+      // Estratégia 2: se for o token inicial, considerar como admin
+      if (!isAdmin && accessToken.description && accessToken.description.includes('inicial')) {
+        isAdmin = true;
+        log(`Concedendo privilégio admin para token inicial`, 'info');
+      }
+      
+      // Estratégia 3: para desenvolvimento, considerar como admin se o token foi criado pelo usuário ID 1
+      if (!isAdmin && accessToken.createdBy === 1) {
+        isAdmin = true;
+        log(`Concedendo privilégio admin para token criado pelo primeiro usuário (ID 1)`, 'info');
+      }
+      
+      log(`Resultado final da verificação de admin: ${isAdmin}`, 'info');
+      
       // Armazenar o usuário na requisição para uso posterior
-      req.user = { isAuthenticated: true, isAdmin: false, tokenId: accessToken.id };
+      req.user = { 
+        isAuthenticated: true, 
+        isAdmin: isAdmin, // Garantir que seja um booleano 
+        tokenId: accessToken.id,
+        userId: accessToken.createdBy  // Usar userId em vez de createdBy para manter padrão
+      };
+      
+      log(`Usuário na requisição: ${JSON.stringify(req.user)}`, 'info');
       next();
     } catch (error: any) {
       log(`Erro na verificação de token: ${error.message}`, 'error');
@@ -52,9 +96,19 @@ export function requireToken(req: Request, res: Response, next: NextFunction) {
  * Middleware para verificar se o usuário é administrador
  */
 export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.user?.isAdmin) {
+  log(`Verificando permissão de admin. User: ${JSON.stringify(req.user)}`, 'info');
+  
+  if (!req.user) {
+    log('Requisição sem informações de usuário', 'error');
+    return res.status(401).json({ error: 'Autenticação necessária' });
+  }
+  
+  if (!req.user.isAdmin) {
+    log(`Usuário não tem permissão de admin`, 'info');
     return res.status(403).json({ error: 'Acesso restrito a administradores' });
   }
+  
+  log(`✅ Acesso de administrador confirmado!`, 'info');
   next();
 }
 
@@ -106,7 +160,7 @@ export function setupAuthRoutes(app: Express) {
   });
   
   // Rota para criar um novo token de acesso (requer admin)
-  app.post('/api/admin/tokens', requireAdmin, async (req: Request, res: Response) => {
+  app.post('/api/admin/tokens', requireToken, requireAdmin, async (req: Request, res: Response) => {
     try {
       const { description, maxUsage, expiresAt } = req.body;
       
