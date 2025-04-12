@@ -5,7 +5,22 @@ import multer from "multer";
 import { z } from "zod";
 import { AgoraTokenGenerator } from "./agora";
 import { transcribeAudio, generateAIResponse, generateSpeech } from "./openai";
+import { requireToken, requireAdmin, setupAuthRoutes } from "./auth";
 import { ChatRequest, TTSRequest } from "@shared/schema";
+
+// Declaração para estender a interface Request do Express
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        isAuthenticated: boolean;
+        isAdmin: boolean;
+        userId?: number;
+        tokenId?: number;
+      };
+    }
+  }
+}
 
 // Define interface for Request with file from multer
 interface MulterRequest extends Request {
@@ -19,8 +34,10 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configurar rotas de autenticação
+  setupAuthRoutes(app);
   // Agora token generation endpoint
-  app.get("/api/agora-token", async (req: Request, res: Response) => {
+  app.get("/api/agora-token", requireToken, async (req: Request, res: Response) => {
     try {
       if (!process.env.AGORA_APP_ID || !process.env.AGORA_APP_CERT) {
         throw new Error("Agora credentials not configured");
@@ -62,7 +79,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transcribe speech to text endpoint
-  app.post("/api/stt", upload.single("audio"), async (req: MulterRequest, res: Response) => {
+  app.post("/api/stt", requireToken, upload.single("audio"), async (req: MulterRequest, res: Response) => {
     try {
       // Check if audio file was uploaded
       if (!req.file || !req.file.buffer) {
@@ -84,7 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Chat with AI endpoint
-  app.post("/api/chat", async (req: Request, res: Response) => {
+  app.post("/api/chat", requireToken, async (req: Request, res: Response) => {
     try {
       // Validate request
       const schema = z.object({
@@ -116,7 +133,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Text to speech endpoint
-  app.post("/api/tts", async (req: Request, res: Response) => {
+  app.post("/api/tts", requireToken, async (req: Request, res: Response) => {
     try {
       // Validate request
       const schema = z.object({
@@ -186,6 +203,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: error.message 
       });
     }
+  });
+
+  // Rota para verificar configurações (apenas admin)
+  app.get("/api/admin/config", requireAdmin, (req: Request, res: Response) => {
+    res.json({
+      message: "Acesso de administrador confirmado",
+      user: req.user
+    });
   });
 
   const httpServer = createServer(app);
